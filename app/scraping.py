@@ -690,6 +690,59 @@ def scraping_tvsur_politica():
     else:
         print('Error al realizar scraping.')
 
+def scrape_bbc():
+    url = 'https://www.bbc.com/mundo/topics/c2lej05epw5t'  # URL de la página
+    response = requests.get(url)
+    noticias = []
+
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Encontrar todos los elementos de noticias
+        noticia_elements = soup.find_all('li', class_='bbc-t44f9r')
+
+        for noticia in noticia_elements:
+            try:
+                # Extraer imagen
+                img_element = noticia.find('img')
+                img_src = img_element['src'] if img_element else 'No Image'
+
+                # Extraer título
+                title_element = noticia.find('h2', class_='bbc-1slyjq2 e47bds20')
+                title = title_element.text.strip() if title_element else 'No disponible'
+
+                # Extraer fecha
+                date_element = noticia.find('time', class_='promo-timestamp bbc-16jlylf e1mklfmt0')
+                date = date_element.text.strip() if date_element else 'No disponible'
+
+                # Convertir la fecha al formato MySQL
+                fecha_convertida = convertir_fecha(date)
+
+                # Guardar los datos en un diccionario
+                data = {
+                    'titulo': title,
+                    'descripcion': 'No disponible',  # En este caso, no tienes una descripción específica
+                    'fecha': fecha_convertida,
+                    'fuente': 'BBC Mundo',
+                    'image': img_src
+                }
+
+                noticias.append(data)
+            except Exception as e:
+                print(f"Error al procesar una noticia: {e}")
+
+        if noticias:
+            # Insertar cada noticia en la base de datos
+            for noticia in noticias:
+                upload_to_mysql(noticia, 'internacionales')  # 'internacionales' es la colección de la noticia
+            print("Scraping de BBC completado y datos subidos a MySQL en la colección 'internacionales'.")
+        else:
+            print("No se encontraron noticias en BBC.")
+    else:
+        print("Error al realizar scraping en BBC. Código de estado:", response.status_code)
+
+
+        
 # Función para ejecutar todos los scrapers
 def scrape_all():
     scrape_posiciones()
@@ -701,6 +754,7 @@ def scrape_all():
     scraping_andes_deportes()
     scraping_andes_politica()
     scraping_sinfronteras_politica()
+    scrape_bbc()
     # Agrega las demás funciones de scraping aquí
     
     
